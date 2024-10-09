@@ -47,7 +47,12 @@ from flwr.proto.grpcadapter_pb2 import MessageContainer  # pylint: disable=E0611
 from flwr.proto.node_pb2 import Node  # pylint: disable=E0611
 from flwr.proto.run_pb2 import GetRunRequest, GetRunResponse  # pylint: disable=E0611
 
-from . import FleetConnection, GrpcAdapterFleetConnection, GrpcRereFleetConnection, RestFleetConnection
+from . import (
+    FleetConnection,
+    GrpcAdapterFleetConnection,
+    GrpcRereFleetConnection,
+    RestFleetConnection,
+)
 
 # Tests for GrpcBidiFleetConnections are not included in this file because
 # it doesn't support all Fleet APIs.
@@ -241,7 +246,7 @@ class GrpcRereFleetConnectionTest(FleetConnectionTest):
 
         # Start patcher
         self.patcher = patch(
-            "flwr.client.connection.grpc_rere.grpc_rere_connection.FleetStub",
+            "flwr.client.connection.grpc_rere.grpc_rere_fleet_connection.FleetStub",
             return_value=stub,
         )
         self.patcher.start()
@@ -252,34 +257,42 @@ class GrpcRereFleetConnectionTest(FleetConnectionTest):
         self.patcher.stop()
 
     # pylint: disable-next=unused-argument
-    def _mock_ping(self, request: PingRequest) -> PingResponse:
+    def _mock_ping(self, request: PingRequest, **_kwargs: Any) -> PingResponse:
         return PingResponse(success=True)
 
     # pylint: disable-next=unused-argument
-    def _mock_create_node(self, request: CreateNodeRequest) -> CreateNodeResponse:
+    def _mock_create_node(
+        self, request: CreateNodeRequest, **_kwargs: Any
+    ) -> CreateNodeResponse:
         return CreateNodeResponse(node=Node(node_id=NODE_ID))
 
-    def _mock_delete_node(self, request: DeleteNodeRequest) -> DeleteNodeResponse:
+    def _mock_delete_node(
+        self, request: DeleteNodeRequest, **_kwargs: Any
+    ) -> DeleteNodeResponse:
         self._server_received["node_id_received"] = request.node.node_id
         return DeleteNodeResponse()
 
-    def _mock_receive(self, request: PullTaskInsRequest) -> PullTaskInsResponse:
+    def _mock_receive(
+        self, request: PullTaskInsRequest, **_kwargs: Any
+    ) -> PullTaskInsResponse:
         self._server_received["node_id_received"] = request.node.node_id
         task_ins = serde.message_to_taskins(MESSAGE)
         task_ins.task_id = MESSAGE.metadata.message_id
         return PullTaskInsResponse(task_ins_list=[task_ins])
 
-    def _mock_send(self, request: PushTaskResRequest) -> PushTaskResResponse:
+    def _mock_send(
+        self, request: PushTaskResRequest, **_kwargs: Any
+    ) -> PushTaskResResponse:
         task_res = request.task_res_list[0]
         msg = serde.message_from_taskres(task_res)
         self._server_received["send_received"] = msg
         return PushTaskResResponse()
 
-    def _mock_get_run(self, request: GetRunRequest) -> GetRunResponse:
+    def _mock_get_run(self, request: GetRunRequest, **_kwargs: Any) -> GetRunResponse:
         self._server_received["get_run_received"] = request.run_id
         return GetRunResponse(run=serde.run_to_proto(RUN_INFO))
 
-    def _mock_get_fab(self, request: GetFabRequest) -> GetFabResponse:
+    def _mock_get_fab(self, request: GetFabRequest, **_kwargs: Any) -> GetFabResponse:
         self._server_received["get_fab_received"] = request.hash_str
         return GetFabResponse(fab=serde.fab_to_proto(FAB))
 
@@ -297,7 +310,7 @@ class GrpcAdapterFleetConnectionTest(GrpcRereFleetConnectionTest):
         stub = Mock()
         self._server_received: dict[str, Any] = {}
 
-        def side_effect(request: MessageContainer) -> MessageContainer:
+        def side_effect(request: MessageContainer, **_kwargs: Any) -> MessageContainer:
             req: GrpcMessage | None = None
             res: GrpcMessage | None = None
             # Mock Ping
@@ -338,7 +351,7 @@ class GrpcAdapterFleetConnectionTest(GrpcRereFleetConnectionTest):
         stub.SendReceive.side_effect = side_effect
 
         # Start patcher
-        module = "flwr.client.connection.grpc_adapter.grpc_adapter_connection"
+        module = "flwr.client.connection.grpc_adapter.grpc_adapter_fleet_connection"
         self.patcher = patch(
             f"{module}.GrpcAdapterStub",
             return_value=stub,
