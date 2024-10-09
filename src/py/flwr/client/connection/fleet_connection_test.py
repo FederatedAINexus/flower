@@ -260,9 +260,10 @@ class GrpcRereFleetConnectionTest(FleetConnectionTest):
     def _mock_ping(self, request: PingRequest, **_kwargs: Any) -> PingResponse:
         return PingResponse(success=True)
 
-    # pylint: disable-next=unused-argument
     def _mock_create_node(
-        self, request: CreateNodeRequest, **_kwargs: Any
+        self,
+        request: CreateNodeRequest,  # pylint: disable=unused-argument
+        **_kwargs: Any,
     ) -> CreateNodeResponse:
         return CreateNodeResponse(node=Node(node_id=NODE_ID))
 
